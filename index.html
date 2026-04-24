@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Grow a Garden</title>
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(#8be6ff 0 45%, #8bdc65 45% 100%);
+      color: #17321f;
+      overflow-x: hidden;
+    }
+
+    header {
+      padding: 24px;
+      text-align: center;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(36px, 8vw, 72px);
+      color: #ffffff;
+      text-shadow: 0 5px 0 #3d9b39, 0 10px 20px rgba(0,0,0,.25);
+    }
+
+    .subtitle {
+      margin-top: 10px;
+      font-weight: bold;
+      color: #24502f;
+    }
+
+    .stats {
+      width: min(900px, calc(100% - 32px));
+      margin: 16px auto;
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .pill {
+      background: rgba(255,255,255,.85);
+      border: 3px solid rgba(255,255,255,.65);
+      border-radius: 999px;
+      padding: 12px 18px;
+      font-weight: 900;
+      box-shadow: 0 8px 0 rgba(0,0,0,.12);
+    }
+
+    .garden {
+      width: min(980px, calc(100% - 28px));
+      margin: 32px auto;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+    }
+
+    .plot {
+      aspect-ratio: 1 / .85;
+      border: 5px solid #6b3f22;
+      border-radius: 28px;
+      background: radial-gradient(circle, #9b5b2e 0 10%, #7b431f 65%);
+      box-shadow: inset 0 12px 0 rgba(255,255,255,.08), 0 12px 0 rgba(0,0,0,.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      cursor: pointer;
+      transition: transform .15s;
+      overflow: hidden;
+    }
+
+    .plot:hover { transform: translateY(-4px); }
+
+    .plant {
+      font-size: 64px;
+      filter: drop-shadow(0 8px 0 rgba(0,0,0,.18));
+      transform-origin: bottom center;
+      animation: pop .25s ease;
+      user-select: none;
+    }
+
+    .plot-label {
+      position: absolute;
+      left: 12px;
+      top: 12px;
+      background: rgba(255,255,255,.8);
+      border-radius: 999px;
+      padding: 7px 10px;
+      font-size: 13px;
+      font-weight: 900;
+    }
+
+    .controls {
+      width: min(900px, calc(100% - 32px));
+      margin: 18px auto 36px;
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      border: none;
+      border-radius: 18px;
+      padding: 15px 20px;
+      font-size: 16px;
+      font-weight: 900;
+      cursor: pointer;
+      color: white;
+      background: #22a447;
+      box-shadow: 0 8px 0 #15722e;
+      transition: transform .12s, box-shadow .12s;
+    }
+
+    button:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 11px 0 #15722e;
+    }
+
+    button:active {
+      transform: translateY(4px);
+      box-shadow: 0 4px 0 #15722e;
+    }
+
+    .shop {
+      background: #ff9f1c;
+      box-shadow: 0 8px 0 #b76a00;
+    }
+
+    .shop:hover { box-shadow: 0 11px 0 #b76a00; }
+    .shop:active { box-shadow: 0 4px 0 #b76a00; }
+
+    .message {
+      width: min(700px, calc(100% - 32px));
+      margin: 0 auto 28px;
+      text-align: center;
+      background: rgba(255,255,255,.85);
+      border-radius: 20px;
+      padding: 16px;
+      font-weight: 900;
+    }
+
+    .sun {
+      position: fixed;
+      right: 28px;
+      top: 28px;
+      font-size: 70px;
+      animation: spin 10s linear infinite;
+      z-index: -1;
+    }
+
+    @keyframes pop {
+      from { transform: scale(.3); opacity: .2; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    @media (max-width: 700px) {
+      .garden { grid-template-columns: repeat(2, 1fr); }
+      .plant { font-size: 48px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="sun">☀️</div>
+
+  <header>
+    <h1>Grow a Garden</h1>
+    <div class="subtitle">Click ô đất để trồng/tưới/thu hoạch 🌱</div>
+  </header>
+
+  <section class="stats">
+    <div class="pill">🪙 Coins: <span id="coins">20</span></div>
+    <div class="pill">🌰 Seeds: <span id="seeds">6</span></div>
+    <div class="pill">🏆 Harvests: <span id="harvests">0</span></div>
+  </section>
+
+  <main class="garden" id="garden"></main>
+
+  <section class="controls">
+    <button class="shop" onclick="buySeeds()">Mua 3 seeds - 10 coins</button>
+    <button onclick="waterAll()">Tưới tất cả 💧</button>
+    <button onclick="resetGame()">Chơi lại 🔄</button>
+  </section>
+
+  <div class="message" id="message">Bắt đầu trồng cây nào!</div>
+
+  <script>
+    const garden = document.getElementById("garden");
+    const coinsEl = document.getElementById("coins");
+    const seedsEl = document.getElementById("seeds");
+    const harvestsEl = document.getElementById("harvests");
+    const messageEl = document.getElementById("message");
+
+    let coins = 20;
+    let seeds = 6;
+    let harvests = 0;
+    let plots = Array.from({ length: 9 }, () => ({ stage: 0 }));
+
+    const plants = ["", "🌱", "🌿", "🌻", "🍅"];
+
+    function render() {
+      coinsEl.textContent = coins;
+      seedsEl.textContent = seeds;
+      harvestsEl.textContent = harvests;
+
+      garden.innerHTML = "";
+      plots.forEach((plot, index) => {
+        const div = document.createElement("div");
+        div.className = "plot";
+        div.onclick = () => handlePlot(index);
+        div.innerHTML = `
+          <div class="plot-label">Plot ${index + 1}</div>
+          <div class="plant">${plants[plot.stage] || ""}</div>
+        `;
+        garden.appendChild(div);
+      });
+    }
+
+    function handlePlot(index) {
+      const plot = plots[index];
+
+      if (plot.stage === 0) {
+        if (seeds <= 0) {
+          say("Hết seeds rồi! Mua thêm ở shop nha 🌰");
+          return;
+        }
+        seeds--;
+        plot.stage = 1;
+        say("Bạn vừa trồng một hạt giống 🌱");
+      } else if (plot.stage < 4) {
+        plot.stage++;
+        say("Cây lớn hơn rồi! 💧");
+      } else {
+        coins += 8;
+        harvests++;
+        plot.stage = 0;
+        say("Thu hoạch thành công! +8 coins 🍅");
+      }
+
+      render();
+    }
+
+    function buySeeds() {
+      if (coins < 10) {
+        say("Không đủ coins để mua seeds 😭");
+        return;
+      }
+      coins -= 10;
+      seeds += 3;
+      say("Đã mua 3 seeds mới 🌰");
+      render();
+    }
+
+    function waterAll() {
+      let changed = false;
+      plots.forEach(plot => {
+        if (plot.stage > 0 && plot.stage < 4) {
+          plot.stage++;
+          changed = true;
+        }
+      });
+      say(changed ? "Bạn đã tưới cả vườn 💧" : "Chưa có cây nào để tưới!");
+      render();
+    }
+
+    function resetGame() {
+      coins = 20;
+      seeds = 6;
+      harvests = 0;
+      plots = Array.from({ length: 9 }, () => ({ stage: 0 }));
+      say("Game đã reset. Trồng lại thôi! 🌱");
+      render();
+    }
+
+    function say(text) {
+      messageEl.textContent = text;
+    }
+
+    render();
+  </script>
+</body>
+</html>
